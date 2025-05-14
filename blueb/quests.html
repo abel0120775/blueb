@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Quest Rewards</title>
+    <style>
+        body { background-color: #0e0d0d; color: #c7bebe; font-family: "Garamond", serif; text-align: center; }
+        header { background-color: #2e1e1e; padding: 15px; box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.6); }
+        header a { color: #c7bebe; text-decoration: none; font-weight: bold; font-size: 20px; transition: 0.3s ease; display: block; margin-bottom: 9px; }
+        header a:hover { color: #ff5e00; }
+        .container { max-width: 600px; margin: auto; padding: 20px; border: 3px solid #591c1c; border-radius: 10px; background-color: #1c1414; box-shadow: 0px 0px 15px rgba(255, 0, 0, 0.3); }
+        .quest-card { width: 250px; padding: 15px; border: 3px solid #591c1c; border-radius: 10px; text-align: center; background-color: #251818; box-shadow: 0px 0px 10px rgba(255, 0, 0, 0.3); }
+        .quest-card img { width: 100px; height: 100px; border: 2px solid #ff5e00; margin-bottom: 12px; }
+        .quest-name { font-weight: bold; font-size: 18px; color: #ff5e00; margin-top: 12px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6); }
+        .buttons button { cursor: pointer; background-color: #591c1c; color: white; border: none; padding: 8px; border-radius: 5px; font-weight: bold; transition: 0.3s ease; }
+        .buttons button:hover { background-color: #ff5e00; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <a href="./inventory.html">Inventory</a><hr/>
+        <a href="./quests.html">Quests</a><hr/>
+        <a href="./visual.html">Visual</a>
+    </header>
+
+    <div class="container">
+        <h1>Registro de Recompensas</h1>
+        <form id="questForm">
+            <label>Nome da Quest:</label><input type="text" id="nome" required><br>
+            <label>Item:</label><input type="text" id="item" required><br>
+            <label>Recompensa:</label><input type="text" id="recompensa" required><br>
+            <label>Chance de Drop (%):</label><input type="number" id="drop" required min="0" max="100"><br>
+            <label>Imagem:</label><input type="file" id="file" accept="image/*"><br><br>
+            <button type="submit">Adicionar Quest</button>
+        </form>
+
+        <div class="quest-list" id="questList"></div>
+    </div>
+
+    <script>
+        let quests = JSON.parse(localStorage.getItem("quests")) || [];
+
+        document.getElementById("questForm").addEventListener("submit", function(event) {
+            event.preventDefault();
+            let nome = document.getElementById("nome").value;
+            let item = document.getElementById("item").value;
+            let recompensa = document.getElementById("recompensa").value;
+            let drop = document.getElementById("drop").value;
+            let fileInput = document.getElementById("file");
+            let file = fileInput.files[0];
+
+            if (file) {
+                let reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onloadend = function() {
+                    quests.push({ nome, item, recompensa, drop, imageUrl: reader.result });
+                    localStorage.setItem("quests", JSON.stringify(quests));
+                    renderQuests();
+                };
+            } else {
+                quests.push({ nome, item, recompensa, drop, imageUrl: "" });
+                localStorage.setItem("quests", JSON.stringify(quests));
+                renderQuests();
+            }
+            document.getElementById("questForm").reset();
+        });
+
+        function renderQuests() {
+            let questList = document.getElementById("questList");
+            questList.innerHTML = "";
+            quests.forEach((quest, index) => {
+                let questCard = document.createElement("div");
+                questCard.classList.add("quest-card");
+                questCard.innerHTML = `
+                    <img src="${quest.imageUrl || 'https://via.placeholder.com/100'}" alt="Item">
+                    <div class="quest-name">${quest.nome}</div>
+                    <div class="buttons">
+                        <button onclick="editQuest(${index})">Editar</button>
+                        <button onclick="deleteQuest(${index})">Excluir</button>
+                    </div>`;
+                questList.appendChild(questCard);
+            });
+        }
+
+        function editQuest(index) {
+            let quest = quests[index];
+            document.getacElementById("nome").value = quest.nome;
+            document.getElementById("item").value = quest.item;
+            document.getElementById("recompensa").value = quest.recompensa;
+            document.getElementById("drop").value = quest.drop;
+            quests.splice(index, 1);
+            localStorage.setItem("quests", JSON.stringify(quests));
+            renderQuests();
+        }
+
+        function deleteQuest(index) {
+            quests.splice(index, 1);
+            localStorage.setItem("quests", JSON.stringify(quests));
+            renderQuests();
+        }
+
+        window.onload = renderQuests;
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personagem RPG - Estilo Sombrio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(180deg, #290000 0%, #540000 50%, #0D0D0D 100%);
+      color: #EAEAEA;
+      font-family: 'Garamond', serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    header {
+      background: linear-gradient(90deg, #540000, #8B0000);
+      padding: 15px;
+      text-align: center;
+      width: 100%;
+    }
+
+    header a {
+      color: #EAEAEA;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 18px;
+      display: block;
+      margin: 5px 0;
+    }
+
+    .xp-card {
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 10px;
+      text-align: center;
+      color: #EAEAEA;
+      width: 250px;
+      position: fixed;
+      top: 20px;
+      right: 20px;
+    }
+
+    .xp-bar-container {
+      width: 100%;
+      background: #333;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+
+    .xp-bar {
+      height: 20px;
+      background: linear-gradient(90deg, #FFD700, #FF4500);
+      width: 0%;
+      border-radius: 5px;
+    }
+
+    .xp-history {
+      margin-top: 10px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 10px;
+      border-radius: 5px;
+      text-align: left;
+    }
+
+    .xp-history table {
+      width: 100%;
+      color: #EAEAEA;
+    }
+
+    .xp-history th, .xp-history td {
+      padding: 5px;
+      text-align: left;
+      border-bottom: 1px solid #EAEAEA;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .personagem-container {
+      position: relative;
+      height: 70vh;
+      width: 20vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .slot {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border: 2px solid #C4A000;
+      background: linear-gradient(145deg, #400017, #1A032D);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #EAEAEA;
+      font-weight: bold;
+    }
+
+    .slot img {
+      max-width: 100%;
+      max-height: 100%;
+      position: absolute;
+    }
+
+    .slot.cabeca { top: 5%; left: 50%; transform: translateX(-50%); }
+    .slot.torso { top: 30%; left: 50%; transform: translateX(-50%); width: 70px; height: 80px; }
+    .slot.braco-esquerdo { top: 30%; left: 15%; }
+    .slot.braco-direito { top: 30%; right: 15%; }
+    .slot.pernas { bottom: 5%; left: 50%; transform: translateX(-50%); width: 80px; height: 60px; }
+
+    button {
+      background-color: #8B0000;
+      color: white;
+      border: none;
+      padding: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+
+    button:hover {
+      background-color: #540000;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="./inventory.html">Ir para o inventory</a>
+  <a href="./quests.html">Ir para o quests</a>
+  <a href="./visual.html">Ir para o visual</a>
+</header>
+
+<div class="xp-card">
+  <p>XP: <span id="xp-value">0</span></p>
+  <div class="xp-bar-container">
+    <div class="xp-bar" id="xp-bar"></div>
+  </div>
+  <p>Nível: <span id="level-value">1</span></p>
+  <button id="add-xp">Ganhar XP</button>
+  
+  <div class="xp-history">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Hora</th>
+        </tr>
+      </thead>
+      <tbody id="xp-history-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="controls">
+  <label for="item-upload">Escolha um item:</label>
+  <input type="file" id="item-upload" accept="image/*">
+
+  <label for="part-select">Escolha a parte do corpo:</label>
+  <select id="part-select">
+    <option value="cabeca">Cabeça</option>
+    <option value="torso">Torso</option>
+    <option value="braco-esquerdo">Braço Esquerdo</option>
+    <option value="braco-direito">Braço Direito</option>
+    <option value="pernas">Pernas</option>
+  </select>
+
+  <button id="save-button">Salvar</button>
+</div>
+
+<div class="personagem-container">
+  <div class="slot cabeca"></div>
+  <div class="slot torso"></div>
+  <div class="slot braco-esquerdo"></div>
+  <div class="slot braco-direito"></div>
+  <div class="slot pernas"></div>
+</div>
+
+<script>
+  function updateXPDisplay() {
+    let xp = localStorage.getItem("xp") || 0;
+    let level = localStorage.getItem("level") || 1;
+    
+    document.getElementById("xp-value").textContent = xp;
+    document.getElementById("level-value").textContent = level;
+    document.getElementById("xp-bar").style.width = (xp % 100) + "%";
+  }
+
+  document.getElementById("add-xp").addEventListener("click", function() {
+    let xp = parseInt(localStorage.getItem("xp") || 0) + 10;
+    localStorage.setItem("xp", xp);
+    updateXPDisplay();
+  });
+
+  document.getElementById("save-button").addEventListener("click", function() {
+    const itemUpload = document.getElementById("item-upload").files[0];
+    const partSelect = document.getElementById("part-select").value;
+
+    if (itemUpload) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        localStorage.setItem(partSelect, e.target.result);
+        updateCharacterItems();
+      };
+      reader.readAsDataURL(itemUpload);
+    }
+  });
+
+  function updateCharacterItems() {
+    document.querySelectorAll(".slot").forEach(slot => {
+      const part = slot.classList[1];
+      const storedItem = localStorage.getItem(part);
+      if (storedItem) {
+        slot.innerHTML = `<img src="${storedItem}" alt="${part}">`;
+      }
+    });
+  }
+
+  updateXPDisplay();
+  updateCharacterItems();
+</script>
+
+</body>
+</html>

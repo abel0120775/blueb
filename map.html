@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canvas Sombrio - Fixação no Local Storage</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        #canvas-container {
+            position: relative;
+            width: 350px;
+            height: 350px;
+            border: 3px solid #ff0000;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+            overflow: hidden;
+        }
+        #canvas {
+            width: 100%;
+            height: 100%;
+        }
+        #gps-marker {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(0, 0, 255, 0.3);
+            position: absolute;
+            cursor: grab;
+            border-radius: 50%;
+            border: 4px solid #4f4fff;
+            box-shadow: 0 0 15px rgba(79, 79, 255, 0.8), 0 0 40px rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease-in-out;
+        }
+        #gps-marker::before {
+            content: "";
+            width: 18px;
+            height: 18px;
+            background-color: rgba(255, 0, 0, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.9);
+        }
+        #gps-marker:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.9), 0 0 50px rgba(0, 0, 0, 1);
+        }
+        #history {
+            width: 200px;
+            background-color: #222;
+            padding: 10px;
+            border: 2px solid #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+            text-align: left;
+        }
+        button {
+            margin-top: 10px;
+            padding: 8px;
+            background-color: #ff0000;
+            color: white;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+        }
+    </style>
+</head>
+<body>
+
+<h1>Canvas Sombrio - Fixação no Local Storage</h1>
+<input type="file" id="imageLoader">
+<div id="container">
+    <div id="canvas-container">
+        <canvas id="canvas"></canvas>
+        <div id="gps-marker" draggable="true"></div>
+    </div>
+    <div id="history">
+        <h2>Histórico de Coordenadas</h2>
+        <ul id="coords-list"></ul>
+        <button id="clear-history">Limpar Histórico</button>
+    </div>
+</div>
+
+<script>
+    const imageLoader = document.getElementById('imageLoader');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const gpsMarker = document.getElementById('gps-marker');
+    const coordsList = document.getElementById('coords-list');
+    const clearHistoryBtn = document.getElementById('clear-history');
+
+    canvas.width = 350;
+    canvas.height = 350;
+
+    // Função para salvar coordenadas no local storage
+    function saveCoordinates(x, y) {
+        let history = JSON.parse(localStorage.getItem("coords")) || [];
+        history.push({ x, y });
+        localStorage.setItem("coords", JSON.stringify(history));
+        updateHistory();
+    }
+
+    // Atualiza o histórico de coordenadas
+    function updateHistory() {
+        coordsList.innerHTML = "";
+        let history = JSON.parse(localStorage.getItem("coords")) || [];
+        history.forEach((coord, index) => {
+            const li = document.createElement("li");
+            li.textContent = `#${index + 1}: X=${coord.x}, Y=${coord.y}`;
+            coordsList.appendChild(li);
+        });
+    }
+
+    // Restaurar histórico ao carregar a página
+    updateHistory();
+
+    // Restaurar posição do marcador ao carregar a página
+    function restoreMarkerPosition() {
+        let savedCoords = JSON.parse(localStorage.getItem("coords"));
+        if (savedCoords && savedCoords.length > 0) {
+            const lastCoord = savedCoords[savedCoords.length - 1];
+            gpsMarker.style.left = `${lastCoord.x}px`;
+            gpsMarker.style.top = `${lastCoord.y}px`;
+        } else {
+            gpsMarker.style.left = "50%";
+            gpsMarker.style.top = "50%";
+        }
+    }
+
+    restoreMarkerPosition();
+
+    imageLoader.addEventListener('change', (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    localStorage.setItem("savedImage", e.target.result);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Restaurar imagem ao carregar
+    function restoreImage() {
+        const savedImage = localStorage.getItem("savedImage");
+        if (savedImage) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            };
+            img.src = savedImage;
+        }
+    }
+
+    restoreImage();
+
+    gpsMarker.addEventListener('dragstart', (event) => {
+        event.dataTransfer.setData("text/plain", "");
+    });
+
+    document.getElementById('canvas-container').addEventListener('dragover', (event) => {
+        event.preventDefault();
+    });
+
+    document.getElementById('canvas-container').addEventListener('drop', (event) => {
+        event.preventDefault();
+
+        const rect = event.target.getBoundingClientRect();
+        const x = event.clientX - rect.left - gpsMarker.clientWidth / 2;
+        const y = event.clientY - rect.top - gpsMarker.clientHeight / 2;
+
+        gpsMarker.style.left = `${x}px`;
+        gpsMarker.style.top = `${y}px`;
+
+        saveCoordinates(x, y);
+    });
+
+    // Limpar histórico
+    clearHistoryBtn.addEventListener("click", () => {
+        localStorage.removeItem("coords");
+        updateHistory();
+    });
+
+</script>
+
+</body>
+</html>

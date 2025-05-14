@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventário Sombrio 🕯️👻</title>
+  <style>
+    body {
+      background-color: #0a0a0a;
+      color: #d4af37; /* Dourado intenso */
+      font-family: 'Cinzel', serif;
+      text-align: center;
+      margin: 0;
+      background-image: url(./wallpaper.jpg);
+    }
+
+    header {
+      background: linear-gradient(90deg, #600000, #000);
+      padding: 15px;
+      border-bottom: 3px solid #8b0000;
+    }
+
+    header a {
+      color: #ffdb58;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 20px;
+      margin: 10px;
+      display: inline-block;
+    }
+
+    table {
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+
+    td {
+      width: 50px;
+      height: 50px;
+      border: 2px solid #600000; /* Vermelho mais escuro */
+      background: radial-gradient(circle, rgba(0,0,0,1) 60%, rgba(96,0,0,0.7) 100%);
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+    td:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 15px rgba(150, 0, 0, 0.8);
+    }
+
+    td img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
+    #file-input {
+      margin: 20px auto;
+      font-size: 16px;
+      color: #ffdb58;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="inventory.html">Inventário 🕯️</a>
+    <a href="quests.html">Quests 👻</a>
+    <a href="visual.html">Visual 🕯️</a>
+  </header>
+
+  <h1>Inventário Sombrio 🕯️👻</h1>
+
+  <input type="file" id="file-input" accept="image/*">
+
+  <table id="inventory">
+    <tbody>
+      <script>
+        for (let i = 0; i < 5; i++) {
+          document.write('<tr>');
+          for (let j = 0; j < 5; j++) {
+            document.write(`<td data-pos="${i}-${j}"></td>`);
+          }
+          document.write('</tr>');
+        }
+      </script>
+    </tbody>
+  </table>
+
+  <script>
+    let selectedImageData = null;
+
+    function loadInventory() {
+      const slots = document.querySelectorAll('#inventory td');
+      slots.forEach(slot => {
+        const pos = slot.getAttribute('data-pos');
+        const saved = localStorage.getItem(`slot-${pos}`);
+        if (saved) {
+          const img = document.createElement('img');
+          img.src = saved;
+          slot.innerHTML = '';
+          slot.appendChild(img);
+        }
+      });
+    }
+
+    function saveToSlot(pos, imageData) {
+      localStorage.setItem(`slot-${pos}`, imageData);
+    }
+
+    document.getElementById('file-input').addEventListener('change', function (event) {
+      const file = event.target.files[0];
+      if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          selectedImageData = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    const slots = document.querySelectorAll('#inventory td');
+    slots.forEach(slot => {
+      slot.addEventListener('click', () => {
+        if (selectedImageData) {
+          const pos = slot.getAttribute('data-pos');
+          slot.innerHTML = '';
+          const img = document.createElement('img');
+          img.src = selectedImageData;
+          slot.appendChild(img);
+          saveToSlot(pos, selectedImageData);
+        }
+      });
+    });
+
+    window.addEventListener('load', loadInventory);
+  </script>
+
+</body>
+</html>
